@@ -1,7 +1,7 @@
 
 services:
   api:
-    build: .
+    image: kimuntu/fruits360-mlops:latest
     container_name: fruits360-api
     working_dir: /app
     volumes:
@@ -11,7 +11,7 @@ services:
       - "8000:8000"
 
   streamlit:
-    build: .
+    image: kimuntu/fruits360-mlops:latest
     container_name: fruits360-streamlit
     working_dir: /app
     volumes:
