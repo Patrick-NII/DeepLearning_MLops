@@ -289,3 +289,104 @@ DeepLearning_MLops/
 ---
 
 *Projet réalisé sur MacOS (Apple Silicon M4 PRO), optimisé pour la portabilité, la reproductibilité et la rapidité de déploiement grâce à Docker, FastAPI et Streamlit.* 
+
+# Déploiement sur EC2 AWS
+
+## 1. Pré-requis
+- Avoir un compte AWS et une instance EC2 Ubuntu (t2.medium ou plus recommandé)
+- Ouvrir les ports nécessaires dans le groupe de sécurité :
+  - 22 (SSH)
+  - 80 (HTTP, si besoin)
+  - 8501 (Streamlit)
+  - 8000 (API)
+- Avoir la clé SSH (`mlops.pem`) sur votre machine locale
+
+## 2. Connexion à l’instance EC2
+```bash
+ssh -i ~/Downloads/mlops.pem ubuntu@<IP-EC2>
+```
+Remplacez `<IP-EC2>` par l’adresse publique de votre instance (ex : `ec2-54-208-26-189.compute-1.amazonaws.com`)
+
+## 3. Installation des dépendances sur EC2
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y ca-certificates curl gnupg git
+sudo apt install -y cloud-guest-utils # pour growpart si besoin
+# Installer Docker (méthode officielle)
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+# Installer Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+# Ajouter l’utilisateur au groupe docker
+sudo usermod -aG docker $USER
+# Déconnectez-vous puis reconnectez-vous pour activer le groupe docker
+```
+
+## 4. Cloner le projet et configurer Docker Compose
+```bash
+git clone <url-de-votre-repo>
+cd DeepLearning_MLops
+```
+- Modifiez le fichier `docker-compose.yml` pour utiliser l’image Docker Hub :
+```yaml
+services:
+  api:
+    image: kimuntu/fruits360-mlops:latest
+    ...
+  streamlit:
+    image: kimuntu/fruits360-mlops:latest
+    ...
+```
+
+## 5. Lancer les services
+```bash
+docker-compose pull
+docker-compose up -d
+```
+
+## 6. Accéder à l’application
+- **Streamlit** : http://<IP-EC2>:8501
+- **API** : http://<IP-EC2>:8000
+
+## 7. Problèmes courants et solutions
+- **Port non accessible** : Vérifiez le groupe de sécurité AWS (ports 8501, 8000 ouverts)
+- **Erreur "no space left on device"** :
+  - Libérez de l’espace (`docker system prune -a`, supprimez des fichiers inutiles)
+  - Ou augmentez la taille du disque EBS (voir console AWS > Volumes > Modify Volume)
+  - Redimensionnez la partition sur Ubuntu :
+    ```bash
+    sudo growpart /dev/xvda 1
+    sudo resize2fs /dev/xvda1
+    ```
+- **Erreur de permission Docker** : Déconnectez-vous/reconnectez-vous après `usermod -aG docker $USER`
+- **IP EC2 a changé** : Après un redémarrage, vérifiez la nouvelle IP publique dans la console AWS
+
+## 8. Architecture locale vs cloud
+- **Local** :
+  - Build et test des images Docker sur votre machine (Mac/Windows/Linux)
+  - Utilisez `docker-compose up --build` pour tester l’intégration
+- **Cloud (EC2)** :
+  - Utilisez des images multi-architecture (`buildx` pour `linux/amd64` et `linux/arm64`)
+  - Privilégiez le pull d’images depuis Docker Hub pour rapidité et cohérence
+  - Séparez bien les environnements de dev/test/prod
+
+## 9. Bonnes pratiques et rigueur pour un bon développement
+- Versionnez toutes les modifications (git)
+- Documentez chaque étape et chaque problème rencontré dans le README
+- Utilisez des images Docker légères et multi-arch
+- Gardez votre code et vos dépendances à jour
+- Sécurisez vos accès (SSH, ports, variables d’environnement)
+- Automatisez le plus possible (scripts d’installation, CI/CD)
+- Testez localement avant tout déploiement cloud
+- Surveillez l’utilisation disque et mémoire sur EC2
+
+---
+
+**Pour toute question ou problème, consultez la documentation officielle AWS, Docker, ou ouvrez une issue sur le repo !** 
