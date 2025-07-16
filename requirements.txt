@@ -1,0 +1,15 @@
+# Deep Learning & MLOps requirements
+# Pour Apple Silicon, tensorflow-macos/tensorflow-metal sont recommandés en local, mais pour Docker, on utilise tensorflow standard CPU
+
+tensorflow==2.15.0
+keras==2.15.0
+kaggle==1.7.4.5
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+pillow==10.3.0
+python-multipart==0.0.9
+scikit-learn==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+# Ajoute d'autres dépendances si besoin 
+streamlit==1.35.0 
