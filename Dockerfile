@@ -1,23 +1,22 @@
-# Utilise une image Python officielle
-FROM python:3.9-slim-buster
+# Image de base ARM64 compatible avec Apple Silicon
+FROM --platform=linux/amd64 python:3.10-slim
 
-# Définir le répertoire de travail
+# Install dependencies système
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY requirements.txt ./
-
-# Installer les dépendances
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copier le reste du code
+# Copie de tous les fichiers
 COPY . .
 
-# Exposer le port de l'API
+# Installation des dépendances Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Port FastAPI
 EXPOSE 8000
 
-# Lancer l’API avec Uvicorn
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-
-# Pour lancer le front Streamlit (en local ou dans le conteneur) :
-# streamlit run app_streamlit.py --server.port 8501 --server.address 0.0.0.0
+# Lancement de l’API
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
