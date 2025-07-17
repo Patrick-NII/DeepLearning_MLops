@@ -327,7 +327,6 @@ sudo chmod +x /usr/local/bin/docker-compose
 # Ajouter l’utilisateur au groupe docker
 sudo usermod -aG docker $USER
 # Déconnectez-vous puis reconnectez-vous pour activer le groupe docker
-```
 
 ## 4. Cloner le projet et configurer Docker Compose
 ```bash
